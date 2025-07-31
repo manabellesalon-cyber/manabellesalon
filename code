@@ -1,0 +1,537 @@
+import { useState } from 'react'
+import { Button } from "/components/ui/button"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "/components/ui/card"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { format } from "date-fns"
+import { Calendar as CalendarIcon, Clock, Check, Star, ArrowRight } from "lucide-react"
+
+interface ServiceVariant {
+  id: string
+  name: string
+  description: string
+  duration: number
+  price: number
+  category: string
+}
+
+interface Service {
+  id: string
+  category: string
+  variants: ServiceVariant[]
+}
+
+const services: Service[] = [
+  {
+    id: "facial",
+    category: "Facial Treatments",
+    variants: [
+      {
+        id: "basic-facial",
+        name: "Basic Facial",
+        description: "Cleansing, exfoliation, and hydration",
+        duration: 45,
+        price: 65,
+        category: "Facial Treatments"
+      },
+      {
+        id: "anti-aging-facial",
+        name: "Anti-Aging Facial",
+        description: "Collagen boost with peptides and retinol",
+        duration: 60,
+        price: 95,
+        category: "Facial Treatments"
+      },
+      {
+        id: "acne-facial",
+        name: "Acne Treatment Facial",
+        description: "Deep cleansing with salicylic acid",
+        duration: 50,
+        price: 85,
+        category: "Facial Treatments"
+      }
+    ]
+  },
+  {
+    id: "haircut",
+    category: "Hair Services",
+    variants: [
+      {
+        id: "basic-cut",
+        name: "Basic Haircut",
+        description: "Simple cut with basic styling",
+        duration: 30,
+        price: 35,
+        category: "Hair Services"
+      },
+      {
+        id: "cut-style",
+        name: "Haircut & Style",
+        description: "Professional cut with blow-dry styling",
+        duration: 45,
+        price: 55,
+        category: "Hair Services"
+      },
+      {
+        id: "premium-cut",
+        name: "Premium Haircut",
+        description: "Cut with deep conditioning treatment",
+        duration: 60,
+        price: 75,
+        category: "Hair Services"
+      }
+    ]
+  },
+  {
+    id: "manicure",
+    category: "Nail Services",
+    variants: [
+      {
+        id: "classic-mani",
+        name: "Classic Manicure",
+        description: "Basic nail care with polish",
+        duration: 30,
+        price: 25,
+        category: "Nail Services"
+      },
+      {
+        id: "gel-mani",
+        name: "Gel Manicure",
+        description: "Long-lasting gel polish application",
+        duration: 45,
+        price: 45,
+        category: "Nail Services"
+      },
+      {
+        id: "luxury-mani",
+        name: "Luxury Manicure",
+        description: "Spa manicure with paraffin treatment",
+        duration: 60,
+        price: 65,
+        category: "Nail Services"
+      }
+    ]
+  },
+  {
+    id: "pedicure",
+    category: "Nail Services",
+    variants: [
+      {
+        id: "classic-pedi",
+        name: "Classic Pedicure",
+        description: "Basic foot care with polish",
+        duration: 45,
+        price: 35,
+        category: "Nail Services"
+      },
+      {
+        id: "spa-pedi",
+        name: "Spa Pedicure",
+        description: "Relaxing foot soak with massage",
+        duration: 60,
+        price: 55,
+        category: "Nail Services"
+      },
+      {
+        id: "deluxe-pedi",
+        name: "Deluxe Pedicure",
+        description: "Complete foot treatment with mask",
+        duration: 75,
+        price: 75,
+        category: "Nail Services"
+      }
+    ]
+  }
+]
+
+const timeSlots = [
+  "9:00 AM", "9:30 AM", "10:00 AM", "10:30 AM", "11:00 AM", "11:30 AM",
+  "12:00 PM", "12:30 PM", "1:00 PM", "1:30 PM", "2:00 PM", "2:30 PM",
+  "3:00 PM", "3:30 PM", "4:00 PM", "4:30 PM", "5:00 PM", "5:30 PM"
+]
+
+export default function SalonBookingApp() {
+  const [selectedCategory, setSelectedCategory] = useState<string | null>(null)
+  const [selectedService, setSelectedService] = useState<ServiceVariant | null>(null)
+  const [selectedDate, setSelectedDate] = useState<Date | undefined>(undefined)
+  const [selectedTime, setSelectedTime] = useState<string>("")
+  const [showConfirmation, setShowConfirmation] = useState(false)
+  const [bookingConfirmed, setBookingConfirmed] = useState(false)
+  const [isCalendarOpen, setIsCalendarOpen] = useState(false)
+
+  const handleCategorySelect = (category: string) => {
+    setSelectedCategory(category)
+    setSelectedService(null)
+    setSelectedDate(undefined)
+    setSelectedTime("")
+    setShowConfirmation(false)
+    setBookingConfirmed(false)
+  }
+
+  const handleServiceSelect = (service: ServiceVariant) => {
+    setSelectedService(service)
+    setSelectedDate(undefined)
+    setSelectedTime("")
+    setShowConfirmation(false)
+    setBookingConfirmed(false)
+  }
+
+  const handleBookAppointment = () => {
+    if (selectedService && selectedDate && selectedTime) {
+      setShowConfirmation(true)
+    }
+  }
+
+  const confirmBooking = () => {
+    setBookingConfirmed(true)
+    setShowConfirmation(false)
+  }
+
+  const resetBooking = () => {
+    setSelectedCategory(null)
+    setSelectedService(null)
+    setSelectedDate(undefined)
+    setSelectedTime("")
+    setShowConfirmation(false)
+    setBookingConfirmed(false)
+  }
+
+  const getUpsellServices = () => {
+    if (!selectedService) return []
+    
+    const currentService = services.find(s => s.variants.some(v => v.id === selectedService.id))
+    if (!currentService) return []
+    
+    return currentService.variants.filter(v => v.id !== selectedService.id)
+  }
+
+  if (bookingConfirmed) {
+    return (
+      <div className="min-h-screen bg-gray-50 py-8 px-4">
+        <div className="max-w-2xl mx-auto">
+          <Card className="text-center">
+            <CardHeader>
+              <div className="mx-auto w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mb-4">
+                <Check className="w-8 h-8 text-green-600" />
+              </div>
+              <CardTitle className="text-2xl">Booking Confirmed!</CardTitle>
+              <CardDescription>
+                Your appointment has been successfully scheduled
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="bg-gray-50 p-4 rounded-lg">
+                <h3 className="font-semibold text-lg mb-2">Appointment Details</h3>
+                <div className="space-y-2 text-left">
+                  <p><span className="font-medium">Service:</span> {selectedService?.name}</p>
+                  <p><span className="font-medium">Date:</span> {selectedDate && format(selectedDate, "MMMM d, yyyy")}</p>
+                  <p><span className="font-medium">Time:</span> {selectedTime}</p>
+                  <p><span className="font-medium">Duration:</span> {selectedService?.duration} minutes</p>
+                  <p><span className="font-medium">Price:</span> ${selectedService?.price}</p>
+                </div>
+              </div>
+              <Button onClick={resetBooking} className="w-full">
+                Book Another Appointment
+              </Button>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    )
+  }
+
+  return (
+    <div className="min-h-screen bg-gray-50 py-8 px-4">
+      <div className="max-w-6xl mx-auto">
+        <header className="text-center mb-8">
+          <h1 className="text-4xl font-bold text-gray-900 mb-2">Salon Bliss</h1>
+          <p className="text-lg text-gray-600">Book your perfect salon experience</p>
+        </header>
+
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          {/* Service Categories */}
+          <div className="lg:col-span-1">
+            <h2 className="text-2xl font-semibold mb-4">Select Service Type</h2>
+            <div className="space-y-3">
+              {services.map((service) => (
+                <Card 
+                  key={service.id} 
+                  className={`cursor-pointer transition-all hover:shadow-md ${
+                    selectedCategory === service.category ? 'ring-2 ring-blue-500' : ''
+                  }`}
+                  onClick={() => handleCategorySelect(service.category)}
+                >
+                  <CardContent className="p-4">
+                    <CardTitle className="text-lg">{service.category}</CardTitle>
+                    <CardDescription className="mt-1">
+                      {service.variants.length} options available
+                    </CardDescription>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          </div>
+
+          {/* Service Variants */}
+          <div className="lg:col-span-1">
+            <h2 className="text-2xl font-semibold mb-4">
+              {selectedCategory ? "Choose Your Service" : "Select a Category First"}
+            </h2>
+            {selectedCategory && (
+              <div className="space-y-3">
+                {services
+                  .find(s => s.category === selectedCategory)
+                  ?.variants.map((variant) => (
+                    <Card 
+                      key={variant.id} 
+                      className={`cursor-pointer transition-all hover:shadow-md ${
+                        selectedService?.id === variant.id ? 'ring-2 ring-blue-500 bg-blue-50' : ''
+                      }`}
+                      onClick={() => handleServiceSelect(variant)}
+                    >
+                      <CardHeader>
+                        <CardTitle className="text-md">{variant.name}</CardTitle>
+                        <CardDescription className="text-sm">{variant.description}</CardDescription>
+                      </CardHeader>
+                      <CardContent>
+                        <div className="flex justify-between items-center">
+                          <span className="text-sm text-gray-600">{variant.duration} min</span>
+                          <span className="text-lg font-semibold">${variant.price}</span>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))}
+              </div>
+            )}
+          </div>
+
+          {/* Booking Form & Upsell */}
+          <div className="lg:col-span-1">
+            {selectedService ? (
+              <>
+                <h2 className="text-2xl font-semibold mb-4">Book Appointment</h2>
+                <Card>
+                  <CardContent className="pt-6 space-y-4">
+                    <div>
+                      <Label className="block text-sm font-medium mb-2">Selected Service</Label>
+                      <div className="p-3 bg-gray-50 rounded-lg">
+                        <p className="font-medium">{selectedService.name}</p>
+                        <p className="text-sm text-gray-600">${selectedService.price} • {selectedService.duration} min</p>
+                      </div>
+                    </div>
+
+                    <div>
+                      <Label className="block text-sm font-medium mb-2">Select Date</Label>
+                      <Button
+                        variant="outline"
+                        className={cn(
+                          "w-full justify-start text-left font-normal",
+                          !selectedDate && "text-muted-foreground"
+                        )}
+                        onClick={() => setIsCalendarOpen(!isCalendarOpen)}
+                      >
+                        <CalendarIcon className="mr-2 h-4 w-4" />
+                        {selectedDate ? format(selectedDate, "PPP") : "Pick a date"}
+                      </Button>
+                      {isCalendarOpen && (
+                        <div className="mt-2 bg-white border rounded-md shadow-lg">
+                          <Calendar
+                            mode="single"
+                            selected={selectedDate}
+                            onSelect={(date) => {
+                              setSelectedDate(date)
+                              setIsCalendarOpen(false)
+                            }}
+                            disabled={(date) => date < new Date()}
+                          />
+                        </div>
+                      )}
+                    </div>
+
+                    <div>
+                      <Label className="block text-sm font-medium mb-2">Select Time</Label>
+                      <Select value={selectedTime} onValueChange={setSelectedTime}>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Choose a time slot" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {timeSlots.map((time) => (
+                            <SelectItem key={time} value={time}>
+                              <div className="flex items-center">
+                                <Clock className="mr-2 h-4 w-4" />
+                                {time}
+                              </div>
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    <Button 
+                      className="w-full"
+                      disabled={!selectedDate || !selectedTime}
+                      onClick={handleBookAppointment}
+                    >
+                      Book Appointment
+                    </Button>
+                  </CardContent>
+                </Card>
+
+                {/* Upsell Section */}
+                {getUpsellServices().length > 0 && (
+                  <div className="mt-6">
+                    <h3 className="text-lg font-semibold mb-3 flex items-center">
+                      <Star className="w-4 h-4 mr-2 text-yellow-500" />
+                      Upgrade Your Experience
+                    </h3>
+                    <div className="space-y-2">
+                      {getUpsellServices().map((upsell) => (
+                        <Card 
+                          key={upsell.id} 
+                          className="cursor-pointer hover:shadow-md transition-all border-l-4 border-l-blue-500"
+                          onClick={() => handleServiceSelect(upsell)}
+                        >
+                          <CardContent className="p-3">
+                            <div className="flex justify-between items-start">
+                              <div>
+                                <p className="font-medium text-sm">{upsell.name}</p>
+                                <p className="text-xs text-gray-600">{upsell.description}</p>
+                              </div>
+                              <div className="text-right">
+                                <p className="text-sm font-semibold">${upsell.price}</p>
+                                <p className="text-xs text-gray-600">{upsell.duration}min</p>
+                              </div>
+                            </div>
+                            <div className="flex items-center text-xs text-blue-600 mt-2">
+                              <ArrowRight className="w-3 h-3 mr-1" />
+                              Switch to this service
+                            </div>
+                          </CardContent>
+                        </Card>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </>
+            ) : (
+              <div className="text-center py-8">
+                <p className="text-gray-500">Select a service to book your appointment</p>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Confirmation Modal */}
+        {showConfirmation && selectedService && selectedDate && selectedTime && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+            <Card className="max-w-md w-full">
+              <CardHeader>
+                <CardTitle>Confirm Your Booking</CardTitle>
+                <CardDescription>Please review your appointment details</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="space-y-2">
+                  <div className="flex justify-between">
+                    <span className="font-medium">Service:</span>
+                    <span>{selectedService.name}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="font-medium">Date:</span>
+                    <span>{format(selectedDate, "MMMM d, yyyy")}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="font-medium">Time:</span>
+                    <span>{selectedTime}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="font-medium">Duration:</span>
+                    <span>{selectedService.duration} minutes</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="font-medium">Price:</span>
+                    <span>${selectedService.price}</span>
+                  </div>
+                </div>
+                <div className="flex gap-4">
+                  <Button 
+                    variant="outline" 
+                    className="flex-1"
+                    onClick={() => setShowConfirmation(false)}
+                  >
+                    Cancel
+                  </Button>
+                  <Button className="flex-1" onClick={confirmBooking}>
+                    Confirm Booking
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        )}
+      </div>
+    </div>
+  )
+}
+
+// Helper components
+function Calendar({ 
+  mode, 
+  selected, 
+  onSelect, 
+  disabled 
+}: {
+  mode: string
+  selected: Date | undefined
+  onSelect: (date: Date | undefined) => void
+  disabled?: (date: Date) => boolean
+}) {
+  const today = new Date()
+  const currentMonth = today.getMonth()
+  const currentYear = today.getFullYear()
+  const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate()
+  
+  const days = Array.from({ length: daysInMonth }, (_, i) => i + 1)
+  const firstDay = new Date(currentYear, currentMonth, 1).getDay()
+  
+  return (
+    <div className="p-3">
+      <div className="grid grid-cols-7 gap-1 text-center text-sm">
+        {['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'].map(day => (
+          <div key={day} className="font-medium text-gray-600 py-1">
+            {day}
+          </div>
+        ))}
+        {Array.from({ length: firstDay }).map((_, i) => (
+          <div key={`empty-${i}`} />
+        ))}
+        {days.map(day => {
+          const date = new Date(currentYear, currentMonth, day)
+          const isDisabled = disabled?.(date)
+          const isSelected = selected && format(date, 'yyyy-MM-dd') === format(selected, 'yyyy-MM-dd')
+          
+          return (
+            <button
+              key={day}
+              className={cn(
+                "h-8 w-8 text-sm rounded hover:bg-gray-100 flex items-center justify-center",
+                isDisabled && "text-gray-400 cursor-not-allowed",
+                isSelected && "bg-blue-500 text-white hover:bg-blue-600"
+              )}
+              onClick={() => !isDisabled && onSelect(date)}
+              disabled={isDisabled}
+            >
+              {day}
+            </button>
+          )
+        })}
+      </div>
+    </div>
+  )
+}
+
+function Label({ children, className }: { children: React.ReactNode, className?: string }) {
+  return <label className={cn("text-sm font-medium", className)}>{children}</label>
+}
+
+function cn(...classes: (string | undefined | null | false)[]) {
+  return classes.filter(Boolean).join(' ')
+}
